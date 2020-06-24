@@ -1,7 +1,5 @@
 /* global sendHapticMessage, showModal */
 
-'use strict';
-
 // Set reaction count to correct number
 function setReactionCount(reactionName, newCount) {
   var reactionClassList = document.getElementById(
@@ -20,15 +18,19 @@ function setReactionCount(reactionName, newCount) {
 }
 
 function showUserReaction(reactionName, animatedClass) {
-  document
-    .getElementById('reaction-butt-' + reactionName)
-    .classList.add('user-activated', animatedClass);
+  const reactionButton = document.getElementById(
+    'reaction-butt-' + reactionName,
+  );
+  reactionButton.classList.add('user-activated', animatedClass);
+  reactionButton.setAttribute('aria-checked', 'true');
 }
 
 function hideUserReaction(reactionName) {
-  document
-    .getElementById('reaction-butt-' + reactionName)
-    .classList.remove('user-activated', 'user-animated');
+  const reactionButton = document.getElementById(
+    'reaction-butt-' + reactionName,
+  );
+  reactionButton.classList.remove('user-activated', 'user-animated');
+  reactionButton.setAttribute('aria-checked', 'false');
 }
 
 function hasUserReacted(reactionName) {
@@ -58,9 +60,7 @@ function reactToArticle(articleId, reaction) {
       setReactionCount(reaction, currentNum + 1);
     }
   }
-  var userStatus = document
-    .getElementsByTagName('body')[0]
-    .getAttribute('data-user-status');
+  var userStatus = document.body.getAttribute('data-user-status');
   sendHapticMessage('medium');
   if (userStatus === 'logged-out') {
     showModal('react-to-article');
@@ -83,7 +83,7 @@ function reactToArticle(articleId, reaction) {
 
   getCsrfToken()
     .then(sendFetch('reaction-creation', createFormdata()))
-    .then(response => {
+    .then((response) => {
       if (response.status === 200) {
         return response.json().then(() => {
           document.getElementById('reaction-butt-' + reaction).disabled = false;
@@ -93,7 +93,7 @@ function reactToArticle(articleId, reaction) {
       document.getElementById('reaction-butt-' + reaction).disabled = false;
       return undefined;
     })
-    .catch(error => {
+    .catch((error) => {
       toggleReaction();
       document.getElementById('reaction-butt-' + reaction).disabled = false;
     });
@@ -106,7 +106,7 @@ function setCollectionFunctionality() {
     );
     var inbetweenLinksLength = inbetweenLinks.length;
     for (var i = 0; i < inbetweenLinks.length; i += 1) {
-      inbetweenLinks[i].onclick = e => {
+      inbetweenLinks[i].onclick = (e) => {
         e.preventDefault();
         var els = document.getElementsByClassName('collection-link-hidden');
         var elsLength = els.length;
@@ -131,10 +131,10 @@ function requestReactionCounts(articleId) {
   ajaxReq.onreadystatechange = () => {
     if (ajaxReq.readyState === XMLHttpRequest.DONE) {
       var json = JSON.parse(ajaxReq.response);
-      json.article_reaction_counts.forEach(reaction => {
+      json.article_reaction_counts.forEach((reaction) => {
         setReactionCount(reaction.category, reaction.count);
       });
-      json.reactions.forEach(reaction => {
+      json.reactions.forEach((reaction) => {
         if (document.getElementById('reaction-butt-' + reaction.category)) {
           showUserReaction(reaction.category, 'not-user-animated');
         }
@@ -145,36 +145,24 @@ function requestReactionCounts(articleId) {
   ajaxReq.send();
 }
 
-function jumpToComments() {
-  document.getElementById('jump-to-comments').onclick = e => {
-    e.preventDefault();
-    document.getElementById('comments').scrollIntoView({
-      behavior: 'instant',
-      block: 'start',
-    });
-  };
-}
-
 function initializeArticleReactions() {
   setCollectionFunctionality();
+
   setTimeout(() => {
-    var articleId;
-    if (document.getElementById('article-body')) {
-      articleId = document.getElementById('article-body').dataset.articleId;
-      if (document.getElementById('article-reaction-actions')) {
-        requestReactionCounts(articleId);
+    var reactionButts = document.getElementsByClassName('crayons-reaction');
+
+    // we wait for the article to appear,
+    // we also check that reaction buttons are there as draft articles don't have them
+    if (document.getElementById('article-body') && reactionButts.length > 0) {
+      var articleId = document.getElementById('article-body').dataset.articleId;
+
+      requestReactionCounts(articleId);
+
+      for (var i = 0; i < reactionButts.length; i += 1) {
+        reactionButts[i].onclick = function addReactionOnClick(e) {
+          reactToArticle(articleId, this.dataset.category);
+        };
       }
-    }
-    var reactionButts = document.getElementsByClassName(
-      'article-reaction-butt',
-    );
-    for (var i = 0; i < reactionButts.length; i += 1) {
-      reactionButts[i].onclick = function addReactionOnClick(e) {
-        reactToArticle(articleId, this.dataset.category);
-      };
-    }
-    if (document.getElementById('jump-to-comments')) {
-      jumpToComments();
     }
   }, 3);
 }

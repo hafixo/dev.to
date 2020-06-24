@@ -1,12 +1,15 @@
 FactoryBot.define do
+  sequence(:title) { |n| "#{Faker::Book.title}#{n}" }
+
   factory :article do
     transient do
-      title { Faker::Book.title }
+      title { generate :title }
       published { true }
       date { "01/01/2015" }
-      tags { Faker::Hipster.words(number: 4).join(", ") }
+      tags { "javascript, html, css" }
       canonical_url { Faker::Internet.url }
       with_canonical_url { false }
+      with_main_image { true }
       with_date { false }
       with_tags { true }
       with_hr_issue { false }
@@ -15,8 +18,8 @@ FactoryBot.define do
       with_collection { nil }
     end
     association :user, factory: :user, strategy: :create
-    description   { Faker::Hipster.paragraph(sentence_count: 1)[0..100] }
-    main_image    { Faker::Avatar.image }
+    description { Faker::Hipster.paragraph(sentence_count: 1)[0..100] }
+    main_image    { with_main_image ? Faker::Avatar.image : nil }
     language { "en" }
     experience_level_rating { rand(4..6) }
     body_markdown do
@@ -31,7 +34,7 @@ FactoryBot.define do
         ---
 
         #{Faker::Hipster.paragraph(sentence_count: 2)}
-        #{'{% tweet 1018911886862057472%}' if with_tweet_tag}
+        #{'{% tweet 1018911886862057472 %}' if with_tweet_tag}
         #{Faker::Hipster.paragraph(sentence_count: 1)}
         #{"\n\n---\n\n something \n\n---\n funky in the code? \n---\n That's nice" if with_hr_issue}
       HEREDOC

@@ -24,7 +24,7 @@ class UserBlocksController < ApplicationController
       @user_block.blocked.stop_following(current_user)
       render json: { result: "blocked" }
     else
-      render json: { error: @user_block.errors.full_messages.join(", "), status: 422 }, status: :unprocessable_entity
+      render json: { error: @user_block.errors_as_sentence, status: 422 }, status: :unprocessable_entity
     end
   end
 
@@ -35,24 +35,23 @@ class UserBlocksController < ApplicationController
       return
     end
 
-    @user_block = UserBlock.find_by(blocked_id: permitted_attributes(UserBlock)[:blocked_id], blocker: current_user)
+    @user_block = UserBlock.find_by!(blocked_id: permitted_attributes(UserBlock)[:blocked_id], blocker: current_user)
     authorize @user_block
 
     if @user_block.destroy
       UserBlocks::ChannelHandler.new(@user_block).unblock_chat_channel
       render json: { result: "unblocked" }
     else
-      render json: { error: @user_block.errors.full_messages.join(", "), status: 422 }, status: :unprocessable_entity
+      render json: { error: @user_block.errors_as_sentence, status: 422 }, status: :unprocessable_entity
     end
   end
 
   private
 
   def check_sign_in_status
-    unless current_user
-      skip_authorization
-      render json: { result: "not-logged-in", status: 401 }, status: :unauthorized
-      return
-    end
+    return if current_user
+
+    skip_authorization
+    render json: { result: "not-logged-in", status: 401 }, status: :unauthorized
   end
 end

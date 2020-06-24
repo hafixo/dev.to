@@ -1,52 +1,59 @@
 import { h } from 'preact';
-import { shallow } from 'preact-render-spy';
-import render from 'preact-render-to-json';
+import { render } from '@testing-library/preact';
 import SidebarUser from '../sidebarUser';
 
 const user = {
-  id: 1234
-}
+  id: 1234,
+  username: 'john_doe',
+  name: 'Jon Doe',
+  profile_image_url: 'www.profile.com',
+};
+
 const followUser = jest.fn();
 
-const renderedSideBar = props => shallow(
-  <SidebarUser
-    key={user.id}
-    user={user}
-    followUser={followUser}
-    index={0}
-    {...props}
-  />
-)
+const renderedSideBar = (props) =>
+  render(
+    <SidebarUser
+      key={user.id}
+      user={user}
+      followUser={followUser}
+      index={0}
+      {...props}
+    />,
+  );
 
 describe('<SidebarUser />', () => {
   it('renders properly', () => {
-    const tree = render(
-      <SidebarUser
-        key={user.id}
-        user={user}
-        followUser={followUser}
-        index={0}
-      />);
-    expect(tree).toMatchSnapshot();
+    const { getByTestId, getByText, getByAltText } = renderedSideBar();
+
+    expect(getByTestId('widget-avatar').getAttribute('href')).toEqual(
+      '/john_doe',
+    );
+    getByAltText('Jon Doe');
+    expect(getByAltText('Jon Doe').getAttribute('src')).toEqual(
+      'www.profile.com',
+    );
+
+    getByText('Jon Doe');
+    expect(getByText('Jon Doe').getAttribute('href')).toEqual('/john_doe');
   });
 
   it('triggers the onClick', () => {
-    renderedSideBar().find('.widget-list-item__follow-button').simulate('click');
+    const { getByTestId } = renderedSideBar();
+    getByTestId('widget-follow-button').click();
+
     expect(followUser).toHaveBeenCalled();
   });
 
-  it('shows if the user is followed or not', () => {
-    expect(renderedSideBar({ user: { following: true } }).contains('✓ FOLLOWING')).toBe(true);
-    expect(renderedSideBar({ user: { following: false } }).contains('+ FOLLOW')).toBe(true);
-  });
+  describe('following', () => {
+    it('shows if the user is followed', () => {
+      const { getByText } = renderedSideBar({ user: { following: true } });
+      getByText(/Following/i);
+    });
 
-  it('shows a <br /> if the index equals 2', () => {
-    expect(renderedSideBar({ index: 2 }).find(<br />).length > 0).toBe(true);
-    expect(renderedSideBar({ index: 2 }).find(<hr />).length > 0).toBe(false);
-  });
-
-  it('shows a <hr /> if the index differs from 2', () => {
-    expect(renderedSideBar({ index: 1 }).find(<hr />).length > 0).toBe(true);
-    expect(renderedSideBar({ index: 3 }).find(<br />).length > 0).toBe(false);
+    it('shows if the user can be followed', () => {
+      const { getByText } = renderedSideBar({ user: { following: false } });
+      getByText(/follow/i);
+    });
   });
 });

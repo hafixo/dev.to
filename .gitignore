@@ -39,9 +39,11 @@ latest.dump
 /public/packs
 /public/packs-test
 /node_modules
+yarn-debug.log*
+.yarn-integrity
 
 # Ignore storybook static site generation
-storybook-static/
+app/javascript/storybook-static/
 yarn-error.log
 
 # Ignore package-lock.json because we use yarn
@@ -67,5 +69,13 @@ docs/.static/api/
 # rvm
 .ruby-gemset
 
+# rbenv
+.rbenv-vars
+
 # asdf
 .tool-versions
+
+# Container volumes
+db_data
+es_data
+gem_cache

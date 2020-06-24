@@ -1,12 +1,10 @@
 require "rails_helper"
 
 RSpec.describe Collection, type: :model do
-  let(:user) { create(:user) }
-  let(:collection) { create(:collection, :with_articles, user: user) }
+  let_it_be(:user) { create(:user) }
+  let_it_be(:collection) { create(:collection, :with_articles, user: user) }
 
   describe "validations" do
-    subject { described_class.new }
-
     it { is_expected.to belong_to(:user) }
     it { is_expected.to belong_to(:organization).optional }
     it { is_expected.to have_many(:articles) }
@@ -17,11 +15,10 @@ RSpec.describe Collection, type: :model do
   end
 
   describe ".find_series" do
-    let(:user) { create(:user) }
-    let(:series) { create(:collection, user: user) }
+    let_it_be(:other_user) { create(:user) }
+    let_it_be(:series) { collection }
 
     it "returns an existing series" do
-      series # the series has to be created before the following expect
       expect do
         expect(described_class.find_series(series.slug, series.user)).to eq(series)
       end.not_to change(described_class, :count)
@@ -29,20 +26,26 @@ RSpec.describe Collection, type: :model do
 
     it "creates a new series for a user if an existing one is not found" do
       slug = Faker::Books::CultureSeries.book
-      expect { described_class.find_series(slug, user) }.to change(described_class, :count).by(1)
+      expect { described_class.find_series(slug, other_user) }.to change(described_class, :count).by(1)
     end
 
     it "creates a new series with an existing slug for a new user" do
-      user = create(:user)
-      series # the series has to be created before the following expect
-      expect { described_class.find_series(series.slug, user) }.to change(described_class, :count).by(1)
+      expect { described_class.find_series(series.slug, other_user) }.to change(described_class, :count).by(1)
     end
   end
 
-  describe "when a single article in collection is updated" do
+  context "when callbacks are triggered after touch" do
     it "touches all articles in the collection" do
-      random_article = collection.articles.sample
-      expect { random_article.touch }.to(change { collection.articles.map(&:updated_at) })
+      before_times = collection.articles.order(updated_at: :desc).pluck(:updated_at).map(&:to_i)
+
+      Timecop.freeze(1.month.from_now) do
+        collection.touch
+      end
+
+      after_times = collection.reload.articles.order(updated_at: :desc).pluck(:updated_at).map(&:to_i)
+
+      all_before = after_times.each_with_index.map { |v, i| v > before_times[i] }
+      expect(all_before.all?).to be(true)
     end
   end
 end

@@ -1,0 +1,29 @@
+<% title("Dashboard - #{community_name}") %>
+
+<div id="index-container"
+    data-params="<%= params.to_json(only: %i[action per_page]) %>"
+    data-which="following">
+  <div class="dashboard-container crayons-layout" id="user-dashboard">
+    <%= render "actions" %>
+
+    <%= render "subactions" %>
+
+    <% @follows.each do |follow| %>
+      <% user = follow.followable %>
+      <% if user %>
+        <div id="follows-<%= follow.id %>" class="single-article">
+          <h2>
+            <a href="<%= user.path %>" class="block-link">
+              <img alt="<%= user.username %> profile image" src="<%= ProfileImage.new(user).get(width: 60) %>" />
+              <%= user.name %>
+              <span class="dashboard-username">@<%= user.username %></span>
+            </a>
+            <button class="cta follow-action-button dashboard-follow follow-user" data-info='{"id":<%= user.id %>,"className":"<%= user.class.name %>"}'>&nbsp;</button>
+          </h2>
+        </div>
+      <% end %>
+    <% end %>
+
+    <%= render "sublist" %>
+  </div>
+</div>

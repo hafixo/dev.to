@@ -40,11 +40,11 @@ class Event < ApplicationRecord
   end
 
   def title_to_slug
-    downcase = (id.to_s + "-" + category + "-" + title).to_s
-    downcase.parameterize + "-" + starts_at.strftime("%m-%d-%Y")
+    downcase = "#{id}-#{category}-#{title}"
+    "#{downcase.parameterize}-#{starts_at.strftime('%m-%d-%Y')}"
   end
 
   def bust_cache
-    Events::BustCacheJob.perform_later
+    Events::BustCacheWorker.perform_async
   end
 end
